@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+.DS_Store
+.env
+.idea/
+.vscode/
+*.log
+test-results/
+playwright-report/
+playwright/.cache/
+cucumber-reports/
+allure-results/
+allure-report/
+screenshots/
+report.html
+report.json
