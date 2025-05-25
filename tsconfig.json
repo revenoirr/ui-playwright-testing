@@ -8,6 +8,6 @@
     "outDir": "./dist",
     "strict": true,
     "lib": ["ES2020", "dom"],
-    "types": ["node", "@cucumber/cucumber", "playwright"]
+    "types": ["node", "playwright"]
   }
 }

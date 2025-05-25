@@ -1,108 +1,92 @@
+Вот пример `README.md`, который ты можешь использовать для своего проекта UI-тестов с Playwright:
 
-# DemoQA UI Automation Project
+---
 
-This project contains UI automation tests for [DemoQA](https://demoqa.com/) using **Playwright**.
+# 📘 DemoQA UI Automation with Playwright
 
-## ✅ Features Covered
+Автоматизация UI-тестирования сайта [DemoQA](https://demoqa.com/) с использованием **Playwright** и **Page Object Model**.
 
-1. **Alerts**
-   - Covered all buttons and verified alert text.
-   - URL: https://demoqa.com/alerts
+## 📋 Описание проекта
 
-2. **Practice Form**
-   - Filled out required fields and submitted the form.
-   - URL: https://demoqa.com/automation-practice-form
+Этот проект включает написание end-to-end UI-тестов для сайта DemoQA, покрывая основные интерактивные компоненты. Используется:
 
-3. **Text Box**
-   - Filled text boxes with random data and verified the result.
-   - URL: https://demoqa.com/text-box
+* **Playwright** для написания и запуска тестов
+* **Page Object Model (POM)** для разделения логики страниц
+* **Allure Report** для генерации отчётов
+* **GitHub Actions** для CI/CD
+* **Cross-browser testing** (Chrome и Firefox)
 
-4. **Tool Tips**
-   - Hovered on all tooltip elements and verified tooltip text.
-   - URL: https://demoqa.com/tool-tips
+---
 
-5. **Select Menu**
-   - Covered dropdowns:
-     - `Select Value`: Group 2, Option 1
-     - `Select One`: Other
-     - `Old Style Select Menu`: Green
-     - `Multiselect`: Black, Blue
-   - URL: https://demoqa.com/select-menu
+## ✅ Покрытые сценарии
 
-## 🧱 Tech Stack
+| № | Страница                    | Описание                                                                                      |
+| - | --------------------------- | --------------------------------------------------------------------------------------------- |
+| 1 | `/alerts`                   | Обработка всех типов алертов (окна, подтверждения, промпта)                                   |
+| 2 | `/automation-practice-form` | Заполнение обязательных полей формы и проверка результата                                     |
+| 3 | `/text-box`                 | Заполнение текстбоксов случайными данными и проверка результата                               |
+| 4 | `/tool-tips`                | Наведение на элементы и проверка отображения тултипов                                         |
+| 5 | `/select-menu`              | Работа с дропдаунами и мультиселектами (значения: Group 2 Option 1, Other, Green, Black/Blue) |
 
-- [Playwright](https://playwright.dev/)
-- TypeScript
-- Jest (optional)
-- Faker.js (for random data generation)
-- Allure (optional, for reporting)
+---
 
-## 🧪 How to Run Tests
-
-```bash
-npm install
-npx playwright install
-npm run test
-````
-
-## 🧾 View Test Report
-
-```bash
-npm run report
-```
-
-## 🛠 Project Structure
+## 🏗️ Структура проекта
 
 ```
 src/
-├── features/               # Feature-wise grouping (alerts, form, etc.)
-├── page-objects/           # Page Object Model files
-├── tests/                  # Actual Playwright test files
-├── support/                # Utility files (if any)
+  ├── page-objects/     # Page Object Model
+  ├── support/          # Вспомогательные файлы, хуки
+  └── tests/            # UI-тесты (.spec.ts)
 ```
 
-## 🚀 CI/CD
+---
 
-GitHub Actions workflow configured to:
+## 🚀 Установка и запуск
 
-* Install dependencies
-* Install Playwright browsers
-* Run tests
-* Upload Playwright HTML report as artifact
+### 🔧 Установка зависимостей
 
-See `.github/workflows/test.yml` for details.
+```bash
+npm install
+npx playwright install --with-deps
+```
 
-## 🧩 Milestones
+### ▶️ Запуск тестов
 
-### Milestone 1
-
-* Project initialized
-* POM structure created
-* Tests for Alerts and Practice Form
-* Run in Chrome
-
-### Milestone 2
-
-* All 5 scenarios implemented
-* Tested in Chrome & Firefox
-* Screenshots on failure
-* Tested on 2 screen resolutions
-
-### Milestone 3
-
-* HTML reporting set up
-* CI pipeline with GitHub Actions
-* Full documentation
+```bash
+npm run test           # Запуск всех тестов (Playwright)
+npm run test:chrome    # Запуск тестов в Chrome (если будет профиль)
+npm run test:firefox   # Запуск тестов в Firefox (если будет профиль)
+```
 
 ---
 
-## 📂 Report Location
+## 📊 Отчёты
 
-Reports are saved in:
+### Allure Report
 
-* `playwright-report/` (HTML report)
-* `test-results/` (screenshots/videos if enabled)
+```bash
+npm run allure:report  # Генерация и запуск отчёта
+```
 
 ---
 
+## 🔁 GitHub Actions (CI)
+
+При пуше в `main` ветку автоматически запускаются:
+
+* Установка зависимостей
+* Запуск тестов
+* Генерация Allure отчёта
+* Загрузка отчёта как артефакта
+
+Пайплайн: `.github/workflows/test.yml`
+
+## 📁 Команда запуска CI
+
+Убедитесь, что в Actions ваш pipeline прошёл успешно:
+
+* Запуск всех тестов
+* Сохранение отчёта
+
+---
 
