@@ -4,11 +4,12 @@ export default defineConfig({
   testDir: 'src/tests',
   timeout: 120000, // Increased to 2 minutes
   expect: { timeout: 20000 }, // Increased expect timeout
-  retries: 2, // Increased retries
-  workers: 1, // Run tests sequentially to avoid conflicts
+  retries: process.env.CI ? 2 : 0, // Only retry in CI
+  workers: process.env.CI ? 1 : undefined, // Sequential in CI, parallel locally
   
   use: {
-    headless: false, // Keep visible for debugging
+    // FIXED: Run headless in CI, headed locally for debugging
+    headless: process.env.CI ? true : false,
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     trace: 'on-first-retry',
@@ -22,14 +23,14 @@ export default defineConfig({
     viewport: { width: 1280, height: 720 },
     ignoreHTTPSErrors: true,
     
-    // Handle slow network
+    // Handle slow network - remove slowMo in CI
     launchOptions: {
-      slowMo: 100, // Add small delay between actions
+      slowMo: process.env.CI ? 0 : 100, // No delay in CI
     }
   },
   
-  // Global setup to handle flaky website
-  globalSetup: require.resolve('./global-setup.ts'),
+  // Global setup to handle flaky website (remove if file doesn't exist)
+  // globalSetup: require.resolve('./global-setup.ts'),
   
   // Configure different projects if needed
   projects: [
@@ -37,9 +38,17 @@ export default defineConfig({
       name: 'chromium',
       use: { 
         ...require('@playwright/test').devices['Desktop Chrome'],
-        // Add specific Chrome flags for better stability
+        // CI-optimized Chrome flags
         launchOptions: {
-          args: [
+          args: process.env.CI ? [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-extensions',
+            '--disable-gpu',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor'
+          ] : [
             '--disable-web-security',
             '--disable-features=VizDisplayCompositor',
             '--disable-dev-shm-usage',

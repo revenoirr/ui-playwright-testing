@@ -26,8 +26,18 @@ jobs:
       - name: 🎭 Install Playwright Browsers
         run: npx playwright install --with-deps
 
+      - name: 🌐 Check target site accessibility
+        run: curl -I https://demoqa.com || echo "Site check failed"
+
       - name: 🧪 Run Playwright Tests
-        run: npm run test
+        run: |
+          echo "CI environment detected: $CI"
+          echo "Node version: $(node --version)"
+          echo "npm version: $(npm --version)"
+          echo "Running tests in headless mode..."
+          npm run test
+        env:
+          CI: true
 
       - name: 📤 Upload Playwright HTML Report
         if: always()
