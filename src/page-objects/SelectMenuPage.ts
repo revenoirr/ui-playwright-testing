@@ -203,6 +203,45 @@ async selectMultipleOptions(options: string[]): Promise<void> {
     }
   }
 }
+
+// Add this missing method to your SelectMenuPage class
+
+/**
+ * Select an option from the "Old Style Select Menu" dropdown
+ */
+async selectOldStyle(option: string): Promise<void> {
+  console.log(`Selecting old style option: ${option}`);
+  
+  try {
+    // Wait for the old style select element
+    await this.page.waitForSelector(this.oldStyleSelectMenu, { 
+      state: 'visible', 
+      timeout: 15000 
+    });
+    
+    // Scroll into view
+    await this.page.locator(this.oldStyleSelectMenu).scrollIntoViewIfNeeded();
+    
+    // Select the option by value or text
+    await this.page.selectOption(this.oldStyleSelectMenu, { label: option });
+    
+    // Wait for selection to complete
+    await this.page.waitForTimeout(1000);
+    
+    console.log(`Successfully selected old style: ${option}`);
+    
+  } catch (error) {
+    console.log(`Failed to select old style option ${option}:`, error);
+    
+    // Alternative approach - try selecting by value
+    try {
+      await this.page.selectOption(this.oldStyleSelectMenu, option);
+      console.log(`Alternative old style selection succeeded for: ${option}`);
+    } catch (altError) {
+      throw new Error(`Could not select old style option: ${option}. Both methods failed.`);
+    }
+  }
+}
   
 // SelectMenuPage.ts - FINAL FIXED VERSION for getValue methods
 /**

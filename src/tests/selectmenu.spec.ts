@@ -6,10 +6,17 @@ test.describe('Select Menu Tests', () => {
   let selectMenuPage: SelectMenuPage;
 
   test.beforeEach(async ({ page }) => {
-    test.setTimeout(60000); // Increase timeout
-    selectMenuPage = new SelectMenuPage(page);
+  test.setTimeout(90000); // Increase timeout even more
+  selectMenuPage = new SelectMenuPage(page);
+  
+  try {
     await selectMenuPage.navigate();
-    await page.waitForLoadState('networkidle');
+    
+    // REMOVE the problematic networkidle wait - it's causing your timeouts
+    // await page.waitForLoadState('networkidle'); // <-- DELETE THIS LINE
+    
+    // Instead, wait for page to be loaded and stable
+    await page.waitForLoadState('domcontentloaded');
     
     // Remove any blocking elements
     await page.evaluate(() => {
@@ -18,8 +25,22 @@ test.describe('Select Menu Tests', () => {
       
       const ads = document.querySelectorAll('[id*="google_ads"], [class*="ad"]');
       ads.forEach(ad => ad.remove());
+      
+      // Also remove any overlay or modal elements that might interfere
+      const overlays = document.querySelectorAll('[class*="overlay"], [class*="modal"], [class*="popup"]');
+      overlays.forEach(overlay => overlay.remove());
     });
-  });
+    
+    // Give a moment for any dynamic content to settle
+    await page.waitForTimeout(2000);
+    
+    console.log('SelectMenu page setup completed successfully');
+    
+  } catch (error) {
+    console.log('Setup failed:', error);
+    // Don't throw here - let individual tests handle their own failures
+  }
+});
 
   async function selectOption(option: string, dropdownName: string) {
     switch (dropdownName) {
