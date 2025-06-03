@@ -86,3 +86,29 @@ npm run allure:report  # Генерация и запуск отчёта
 
 ---
 
+# Review
+
+* Write README.md in english language
+*  package.json. Move to devDependencies:
+*     "@faker-js/faker": "^8.0.2",
+*     "@playwright/test": "^1.36.0",
+*     "dotenv": "^16.3.1",
+*     "playwright": "^1.36.0",
+*     "ts-node": "^10.9.1",
+*     "typescript": "^5.1.6"
+* Is BDD approcah implemented?
+* Remove all locators to the Page Objects.
+* How to launch with specific key word test in Chrome browser with resolution 1920 x 1080?
+* Remove hardcoded waiters 
+* Use "domcontentloaded" for pages where you need to start testing immediately after the DOM has loaded.
+*  Use "load" for pages where it is important to wait for all resources to load (for example, if the test depends on images or external scripts).
+*  Use "networkidle" for pages with dynamic content where you need to wait for all network requests to complete.
+*    Playwright automatically waits for elements to become ready for interaction (visible, clickable, etc.) by default. This reduces the need for manual delays.
+* 
+* waitForSelector()
+* Waits for an element to appear, disappear, or change state on the page. You can specify the state: 'visible', 'hidden', 'attached', 'detached'.
+* 
+* This is the best way to wait for a specific element instead of a fixed delay.
+* 
+* waitForFunction()
+* Allows you to wait for an arbitrary condition specified as a function. Used for more complex checks when you need to wait for a specific state in the DOM or JS.
