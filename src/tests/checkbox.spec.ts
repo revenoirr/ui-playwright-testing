@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-
+//TODO remove locators to the Page Object
 const BASE_URL = 'https://demoqa.com/checkbox';
 
 test.describe('Checkbox tests', () => {

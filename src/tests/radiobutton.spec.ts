@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { RadioButtonPage } from '../page-objects/RadioButtonPage';
-
+//TODO remove locators to the Page Object
 test.describe('Radio Button Page', () => {
   let radioPage: RadioButtonPage;
 

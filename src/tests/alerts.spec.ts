@@ -1,5 +1,5 @@
 import { test, expect, Dialog } from '@playwright/test';
-
+//TODO remove locators to the Page Object
 test.describe('Alerts page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('https://demoqa.com/alerts');

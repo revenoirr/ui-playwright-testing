@@ -1,23 +1,23 @@
 import { test, expect } from '@playwright/test';
 import { FormPage } from '../page-objects/FormPage';
-
+//TODO remove locators to the Page Object
 test.describe('Practice Form Page', () => {
   let formPage: FormPage;
 
   test.beforeEach(async ({ page }) => {
     // Increase timeout for this specific test
     test.setTimeout(90000); // 90 seconds
-    
+
     // Set viewport size
     await page.setViewportSize({ width: 1280, height: 720 });
-    
+
     formPage = new FormPage(page);
     await formPage.navigate();
-    
+
     // Wait for page to be fully loaded
     await page.waitForLoadState('domcontentloaded');
     await page.waitForTimeout(2000); // Give extra time for any dynamic content
-    
+
     // Remove blocking elements more aggressively
     await page.evaluate(() => {
       // Remove common blocking elements
@@ -30,12 +30,12 @@ test.describe('Practice Form Page', () => {
         '.popup',
         '.modal'
       ];
-      
+
       selectorsToRemove.forEach(selector => {
         const elements = document.querySelectorAll(selector);
         elements.forEach(el => el.remove());
       });
-      
+
       // Remove any overlay elements
       document.body.style.overflow = 'visible';
     });
@@ -44,7 +44,7 @@ test.describe('Practice Form Page', () => {
   test('should fill and submit the practice form successfully', async ({ page }) => {
     const formData = {
       firstName: 'John',
-      lastName: 'Doe', 
+      lastName: 'Doe',
       email: 'john.doe@example.com',
       gender: 'Male',
       mobile: '1234567890',
@@ -62,11 +62,11 @@ test.describe('Practice Form Page', () => {
       await formPage.enterFirstName(formData.firstName);
       await formPage.enterLastName(formData.lastName);
       await formPage.enterEmail(formData.email);
-      
+
       // Gender selection
       await formPage.selectGender(formData.gender);
       await formPage.enterMobileNumber(formData.mobile);
-      
+
       // Date of birth - this often causes issues
       try {
         await formPage.selectDateOfBirth(formData.dateOfBirth);
@@ -75,28 +75,28 @@ test.describe('Practice Form Page', () => {
         // Alternative date input method
         await page.fill('#dateOfBirthInput', '10 May 1990');
       }
-      
+
       // Subject selection
       try {
         await formPage.selectSubject(formData.subject);
       } catch (error) {
         console.log('Subject selection failed, continuing...');
       }
-      
+
       // Hobby selection
       try {
         await formPage.selectHobby(formData.hobby);
       } catch (error) {
         console.log('Hobby selection failed, continuing...');
       }
-      
+
       // Picture upload - make this optional
       try {
         await formPage.uploadPicture();
       } catch (error) {
         console.log('Picture upload failed, continuing...');
       }
-      
+
       // Address
       await formPage.enterCurrentAddress(formData.address);
 
@@ -113,7 +113,7 @@ test.describe('Practice Form Page', () => {
           await page.click('#state');
           await page.click(`text=${formData.state}`);
           await page.waitForTimeout(1000);
-          
+
           await page.click('#city');
           await page.click(`text=${formData.city}`);
         } catch (altError) {
@@ -129,9 +129,9 @@ test.describe('Practice Form Page', () => {
           submitBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       });
-      
+
       await page.waitForTimeout(1000);
-      
+
       // Try multiple ways to submit
       try {
         await formPage.submitForm();
@@ -145,18 +145,18 @@ test.describe('Practice Form Page', () => {
       try {
         await page.waitForSelector('#example-modal-sizes-title-lg', { timeout: 15000 });
         expect(await formPage.isConfirmationDisplayed()).toBeTruthy();
-        
+
         // Verify basic data if modal appears
         const submittedData = await formPage.getSubmittedData();
         expect(submittedData['Student Name']).toContain(formData.firstName);
         expect(submittedData['Student Name']).toContain(formData.lastName);
-        
+
         console.log('Form submitted successfully!');
       } catch (modalError) {
         console.log('Modal did not appear, but form may have been submitted');
         // Take screenshot for debugging
         await page.screenshot({ path: `form-no-modal-${Date.now()}.png` });
-        
+
         // Check if we're still on the form page or if anything changed
         const currentUrl = page.url();
         console.log('Current URL after submit:', currentUrl);
