@@ -49,10 +49,11 @@ npx playwright install --with-deps
 ### ▶️ Запуск тестов
 
 ```bash
-npm run test           # Запуск всех тестов (Playwright)
-npm run test:chrome    # Запуск тестов в Chrome (если будет профиль)
-npm run test:firefox   # Запуск тестов в Firefox (если будет профиль)
-```
+npx playwright test           # Запуск всех тестов (Playwright)
+npx playwright test --project=chromium
+npx playwright test --project=firefox
+npx playwright test --project=webkit
+
 
 ---
 
@@ -77,12 +78,5 @@ npm run allure:report  # Генерация и запуск отчёта
 
 Пайплайн: `.github/workflows/test.yml`
 
-## 📁 Команда запуска CI
 
-Убедитесь, что в Actions ваш pipeline прошёл успешно:
-
-* Запуск всех тестов
-* Сохранение отчёта
-
----
 

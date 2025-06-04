@@ -25,39 +25,46 @@ export default defineConfig({
     
     // Handle slow network - remove slowMo in CI
     launchOptions: {
-      slowMo: process.env.CI ? 0 : 100, // No delay in CI
+      slowMo: process.env.CI ? 0 : 100, 
     }
   },
   
-  // Global setup to handle flaky website (remove if file doesn't exist)
-  // globalSetup: require.resolve('./global-setup.ts'),
-  
-  // Configure different projects if needed
   projects: [
-    {
-      name: 'chromium',
-      use: { 
-        ...require('@playwright/test').devices['Desktop Chrome'],
-        // CI-optimized Chrome flags
-        launchOptions: {
-          args: process.env.CI ? [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-extensions',
-            '--disable-gpu',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor'
-          ] : [
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor',
-            '--disable-dev-shm-usage',
-            '--no-sandbox'
-          ]
-        }
-      },
+  {
+    name: 'chromium',
+    use: { 
+      ...require('@playwright/test').devices['Desktop Chrome'],
+      launchOptions: {
+        args: process.env.CI ? [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-extensions',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor'
+        ] : [
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--disable-dev-shm-usage',
+          '--no-sandbox'
+        ]
+      }
     },
-  ],
+  },
+  {
+    name: 'firefox',
+    use: {
+      ...require('@playwright/test').devices['Desktop Firefox']
+    },
+  },
+  {
+    name: 'webkit',
+    use: {
+      ...require('@playwright/test').devices['Desktop Safari']
+    },
+  }
+],
   
   // Reporting
   reporter: [
