@@ -1,6 +1,6 @@
 // tests/date-picker.spec.ts
 import { test, expect } from '@playwright/test';
-
+//TODO remove locators to the Page Object
 test.describe('Date Picker Page', () => {
   test('should allow selecting a date and display it correctly', async ({ page }) => {
     await page.goto('https://demoqa.com/date-picker');

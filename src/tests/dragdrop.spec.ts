@@ -1,12 +1,12 @@
 import { test, expect } from '@playwright/test';
-
+//TODO remove locators to the Page Object
 test.describe('Drag and Drop Page', () => {
   test('should drag the draggable element to the drop target and verify text', async ({ page }) => {
     await page.goto('https://demoqa.com/droppable');
 
     // Wait for page to load - use domcontentloaded instead of networkidle
     await page.waitForLoadState('domcontentloaded');
-    
+
     // Wait for specific elements to be visible instead of networkidle
     await page.waitForSelector('#draggable', { state: 'visible', timeout: 15000 });
     await page.waitForSelector('#droppable', { state: 'visible', timeout: 15000 });
@@ -25,7 +25,7 @@ test.describe('Drag and Drop Page', () => {
 
     // Fallback to basic selectors if specific ones don't work
     let draggable, dropTarget;
-    
+
     try {
       await expect(simpleDraggable).toBeVisible({ timeout: 5000 });
       await expect(simpleDropTarget).toBeVisible({ timeout: 5000 });
@@ -35,7 +35,7 @@ test.describe('Drag and Drop Page', () => {
       console.log('Using fallback selectors...');
       draggable = page.locator('#draggable').first();
       dropTarget = page.locator('#droppable').first();
-      
+
       await expect(draggable).toBeVisible({ timeout: 10000 });
       await expect(dropTarget).toBeVisible({ timeout: 10000 });
     }
@@ -53,11 +53,11 @@ test.describe('Drag and Drop Page', () => {
       await draggable.dragTo(dropTarget);
     } catch (dragError) {
       console.log('Standard drag failed, trying manual drag...');
-      
+
       // Manual drag approach
       const draggableBox = await draggable.boundingBox();
       const dropTargetBox = await dropTarget.boundingBox();
-      
+
       if (draggableBox && dropTargetBox) {
         await page.mouse.move(draggableBox.x + draggableBox.width / 2, draggableBox.y + draggableBox.height / 2);
         await page.mouse.down();
@@ -76,14 +76,14 @@ test.describe('Drag and Drop Page', () => {
       // Debug information
       const finalText = await dropTarget.textContent();
       console.log('Final drop target text:', finalText);
-      
+
       // Take screenshot for debugging
       await page.screenshot({ path: 'debug-dragdrop.png' });
-      
+
       // Try alternative text checks
       const possibleTexts = ['Dropped!', 'Drop here', 'Dropped'];
       let textFound = false;
-      
+
       for (const text of possibleTexts) {
         try {
           await expect(dropTarget).toContainText(text, { timeout: 2000 });
@@ -94,7 +94,7 @@ test.describe('Drag and Drop Page', () => {
           continue;
         }
       }
-      
+
       if (!textFound) {
         throw new Error(`Expected 'Dropped!' but got '${finalText}'. Initial text was '${initialText}'`);
       }
