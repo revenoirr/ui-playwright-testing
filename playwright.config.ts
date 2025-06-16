@@ -8,7 +8,8 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   
   use: {
-    headless: process.env.CI ? false : true,
+    // ИСПРАВЛЕНО: на CI должен быть headless: true
+    headless: process.env.CI ? true : false,
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
     trace: 'on-first-retry',
@@ -17,6 +18,9 @@ export default defineConfig({
     viewport: { width: 1920, height: 1080 },
     ignoreHTTPSErrors: true,
     
+    // Добавить дополнительные таймауты для CI
+    actionTimeout: process.env.CI ? 15000 : 10000,
+    navigationTimeout: process.env.CI ? 30000 : 20000,
   },
   
   projects: [
@@ -33,7 +37,8 @@ export default defineConfig({
             '--disable-extensions',
             '--disable-gpu',
             '--disable-web-security',
-            '--disable-features=VizDisplayCompositor'
+            '--disable-features=VizDisplayCompositor',
+            '--headless=new' // Явно указать новый headless режим
           ] : [
             '--disable-web-security',
             '--disable-features=VizDisplayCompositor',
@@ -66,6 +71,5 @@ export default defineConfig({
     ['list']
   ],
   
-
   outputDir: 'test-results/',
 });
