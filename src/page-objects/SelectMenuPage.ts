@@ -1,291 +1,232 @@
-import { Page } from 'playwright';
+import { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
 export class SelectMenuPage extends BasePage {
-  // Selectors
-  private selectValueDropdown = '#withOptGroup';
-  private selectValueInput = '#react-select-2-input';
-  private selectOneDropdown = '#selectOne';
-  private selectOneInput = '#react-select-3-input';
-  private oldStyleSelectMenu = '#oldSelectMenu';
-  private multiselectDropdown = '#react-select-4-container';
-  private multiselectInput = '#react-select-4-input';
-  private selectedValueOption = '.css-1uccc91-singleValue';
-  private multiSelectedOptions = '.css-12jo7m5';
-  private multiValueRemove = '.css-xb97g8';
+  private readonly selectValueDropdown: Locator;
+  private readonly selectValueInput: Locator;
+  private readonly selectOneDropdown: Locator;
+  private readonly selectOneInput: Locator;
+  private readonly oldStyleSelectMenu: Locator;
+  private readonly multiselectDropdown: Locator;
+  private readonly multiselectInput: Locator;
+  private readonly selectedValueOption: Locator;
+  private readonly multiSelectedOptions: Locator;
+  private readonly multiValueRemove: Locator;
+  private readonly selectContainer: Locator;
 
   constructor(page: Page) {
     super(page);
+    
+    this.selectValueDropdown = this.page.locator('#withOptGroup');
+    this.selectValueInput = this.page.locator('#react-select-2-input');
+    this.selectOneDropdown = this.page.locator('#selectOne');
+    this.selectOneInput = this.page.locator('#react-select-3-input');
+    this.oldStyleSelectMenu = this.page.locator('#oldSelectMenu');
+    // Fixed: More reliable multiselect locator
+    this.multiselectDropdown = this.page.locator('div').filter({ hasText: 'Select...' }).last();
+    this.multiselectInput = this.page.locator('input[id]').last();
+    this.selectedValueOption = this.page.locator('.css-1uccc91-singleValue');
+    this.multiSelectedOptions = this.page.locator('[class*="multiValue"]');
+    this.multiValueRemove = this.page.locator('.css-xb97g8');
+    this.selectContainer = this.page.locator('#selectMenuContainer');
   }
 
-  // Fixed navigate and select methods for SelectMenuPage.ts (lines 17-58)
-
-async navigate(): Promise<void> {
-  try {
-    await super.navigate('/select-menu');
-    // Use domcontentloaded instead of networkidle - much more reliable
-    await this.page.waitForLoadState('domcontentloaded');
+  async navigate(): Promise<void> {
+    await this.page.goto('/select-menu');
     
-    // Wait for the main dropdown to be visible with increased timeout
-    await this.page.waitForSelector(this.selectValueDropdown, { 
-      state: 'visible', 
-      timeout: 15000 
-    });
+    // Fixed: Use 'load' instead of 'networkidle' to avoid timeout
+    await this.page.waitForLoadState('load');
     
-    console.log('SelectMenu page navigation succeeded');
+    // Wait for main container to be visible
+    await this.selectContainer.waitFor({ state: 'visible', timeout: 10000 });
     
-  } catch (error) {
-    console.log('Primary navigation failed, trying alternative approach...');
+    await this.removePageBlockers();
     
-    try {
-      // Alternative approach - direct URL navigation
-      await this.page.goto('https://demoqa.com/select-menu', {
-        waitUntil: 'domcontentloaded',
-        timeout: 30000
-      });
-      
-      // Wait for page to stabilize
-      await this.page.waitForTimeout(2000);
-      
-      // Check if main elements are present
-      await this.page.waitForSelector(this.selectValueDropdown, { 
-        state: 'visible', 
-        timeout: 15000 
-      });
-      
-      console.log('Alternative navigation succeeded');
-      
-    } catch (altError) {
-      console.log('Alternative navigation also failed, trying last resort...');
-      
-      // Last resort - just wait for load
-      await this.page.goto('https://demoqa.com/select-menu');
-      await this.page.waitForLoadState('load');
-      await this.page.waitForTimeout(5000); // Give extra time
-      
-      console.log('Last resort navigation completed');
-    }
+    // Reduced wait time
+    await this.page.waitForTimeout(500);
   }
-}
 
-/**
- * Select a value from the "Select Value" dropdown - IMPROVED
- */
-async selectValueOption(option: string): Promise<void> {
-  console.log(`Selecting value option: ${option}`);
-  
-  try {
-    // Wait for dropdown to be visible and clickable with longer timeout
-    await this.page.waitForSelector(this.selectValueDropdown, { 
-      state: 'visible', 
-      timeout: 15000 
+  private async removePageBlockers(): Promise<void> {
+    await this.page.evaluate(() => {
+      const blockers = [
+        '#fixedban',
+        '[id*="google_ads"]',
+        '[class*="ad"]',
+        '[class*="overlay"]',
+        '[class*="modal"]',
+        '[class*="popup"]'
+      ];
+      
+      blockers.forEach(selector => {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(el => el.remove());
+      });
     });
+  }
+
+  async selectValueOption(option: string): Promise<void> {
+    await this.selectValueDropdown.waitFor({ state: 'visible' });
+    await this.selectValueDropdown.scrollIntoViewIfNeeded();
+    await this.selectValueDropdown.click();
     
-    // Scroll into view
-    await this.page.locator(this.selectValueDropdown).scrollIntoViewIfNeeded();
-    
-    // Click the dropdown
-    await this.click(this.selectValueDropdown);
-    
-    // Wait for the input to appear
-    await this.page.waitForSelector(this.selectValueInput, { 
-      state: 'visible', 
-      timeout: 10000 
-    });
-    
-    // Clear and fill the input
-    await this.page.fill(this.selectValueInput, '');
-    await this.page.fill(this.selectValueInput, option);
+    await this.selectValueInput.waitFor({ state: 'visible' });
+    await this.selectValueInput.fill(option);
     await this.page.keyboard.press('Enter');
     
-    // Wait for selection to complete
-    await this.page.waitForTimeout(2000);
-    
-    console.log(`Successfully selected: ${option}`);
-    
-  } catch (error) {
-    console.log(`Failed to select value option ${option}:`, error);
-    
-    // Alternative approach - try clicking option directly
-    try {
-      await this.page.click(`text="${option}"`, { timeout: 5000 });
-      console.log(`Alternative selection succeeded for: ${option}`);
-    } catch (altError) {
-      throw new Error(`Could not select value option: ${option}. Both methods failed.`);
-    }
+    await this.page.waitForFunction(
+      (selectedOption) => {
+        const valueElement = document.querySelector('#withOptGroup .css-1uccc91-singleValue, #withOptGroup .css-qc6sy-singleValue');
+        return valueElement && valueElement.textContent?.trim() === selectedOption;
+      },
+      option,
+      { timeout: 10000 }
+    );
   }
-}
 
-/**
- * Select an option from the "Select One" dropdown - IMPROVED
- */
-async selectOneOption(option: string): Promise<void> {
-  console.log(`Selecting one option: ${option}`);
-  
-  try {
-    await this.page.waitForSelector(this.selectOneDropdown, { 
-      state: 'visible', 
-      timeout: 15000 
-    });
+  async selectOneOption(option: string): Promise<void> {
+    await this.selectOneDropdown.waitFor({ state: 'visible' });
+    await this.selectOneDropdown.scrollIntoViewIfNeeded();
+    await this.selectOneDropdown.click();
     
-    // Scroll into view
-    await this.page.locator(this.selectOneDropdown).scrollIntoViewIfNeeded();
-    
-    await this.click(this.selectOneDropdown);
-    
-    await this.page.waitForSelector(this.selectOneInput, { 
-      state: 'visible', 
-      timeout: 10000 
-    });
-    
-    await this.page.fill(this.selectOneInput, '');
-    await this.page.fill(this.selectOneInput, option);
+    await this.selectOneInput.waitFor({ state: 'visible' });
+    await this.selectOneInput.fill(option);
     await this.page.keyboard.press('Enter');
     
-    await this.page.waitForTimeout(2000);
-    
-    console.log(`Successfully selected one: ${option}`);
-    
-  } catch (error) {
-    console.log(`Failed to select one option ${option}:`, error);
-    
-    // Alternative approach
-    try {
-      await this.page.click(`text="${option}"`, { timeout: 5000 });
-      console.log(`Alternative selection succeeded for: ${option}`);
-    } catch (altError) {
-      throw new Error(`Could not select one option: ${option}. Both methods failed.`);
-    }
+    await this.page.waitForFunction(
+      (selectedOption) => {
+        const valueElement = document.querySelector('#selectOne .css-1uccc91-singleValue, #selectOne .css-qc6sy-singleValue');
+        return valueElement && valueElement.textContent?.trim() === selectedOption;
+      },
+      option,
+      { timeout: 10000 }
+    );
   }
-}
 
-/**
- * Select multiple options from multiselect dropdown - IMPROVED
- */
-async selectMultipleOptions(options: string[]): Promise<void> {
-  console.log(`Selecting multiple options: ${options.join(', ')}`);
-  
-  for (const option of options) {
-    try {
-      // Wait for multiselect dropdown
-      await this.page.waitForSelector(this.multiselectDropdown, { 
-        state: 'visible', 
-        timeout: 15000 
-      });
+  async selectOldStyle(option: string): Promise<void> {
+    await this.oldStyleSelectMenu.waitFor({ state: 'visible' });
+    await this.oldStyleSelectMenu.scrollIntoViewIfNeeded();
+    
+    await this.oldStyleSelectMenu.selectOption({ label: option });
+    
+    await this.page.waitForFunction(
+      (selectedOption) => {
+        const select = document.querySelector('#oldSelectMenu') as HTMLSelectElement;
+        return select && select.options[select.selectedIndex]?.text === selectedOption;
+      },
+      option,
+      { timeout: 5000 }
+    );
+  }
+
+  // Fixed: Simplified multiselect logic
+  async selectMultipleOptions(options: string[]): Promise<void> {
+    for (const option of options) {
+      // Click on the multiselect container
+      await this.multiselectDropdown.click();
       
-      await this.page.locator(this.multiselectDropdown).scrollIntoViewIfNeeded();
-      await this.click(this.multiselectDropdown);
-      
-      // Wait for input
-      await this.page.waitForSelector(this.multiselectInput, { 
-        state: 'visible', 
-        timeout: 10000 
-      });
-      
-      await this.page.fill(this.multiselectInput, option);
+      // Wait for input to be visible and type the option
+      await this.multiselectInput.waitFor({ state: 'visible' });
+      await this.multiselectInput.fill(option);
       await this.page.keyboard.press('Enter');
       
-      // Wait between selections
-      await this.page.waitForTimeout(1000);
+      // Fixed: Wait for the option to appear in selected values
+      await this.page.waitForSelector(`text=${option}`, { timeout: 5000 });
       
-      console.log(`Selected: ${option}`);
-      
-    } catch (error) {
-      console.log(`Failed to select ${option}:`, error);
-      
-      // Try alternative approach
-      try {
-        await this.page.click(`text="${option}"`, { timeout: 5000 });
-        console.log(`Alternative selection succeeded for: ${option}`);
-      } catch (altError) {
-        console.log(`Could not select: ${option}`);
+      // Small delay between selections
+      await this.page.waitForTimeout(300);
+    }
+  }
+
+  async getSelectedValue(): Promise<string> {
+    const valueSelector = this.page.locator('#withOptGroup .css-1uccc91-singleValue, #withOptGroup .css-qc6sy-singleValue');
+    await valueSelector.waitFor({ state: 'visible' });
+    return (await valueSelector.textContent())?.trim() || '';
+  }
+
+  async getSelectedOneValue(): Promise<string> {
+    const valueSelector = this.page.locator('#selectOne .css-1uccc91-singleValue, #selectOne .css-qc6sy-singleValue');
+    await valueSelector.waitFor({ state: 'visible' });
+    return (await valueSelector.textContent())?.trim() || '';
+  }
+
+  async getSelectedOldStyleValue(): Promise<string> {
+    await this.oldStyleSelectMenu.waitFor({ state: 'visible' });
+    
+    return await this.page.evaluate(() => {
+      const select = document.querySelector('#oldSelectMenu') as HTMLSelectElement;
+      return select?.options[select.selectedIndex]?.text || '';
+    });
+  }
+
+  // Fixed: Simplified multiselect value retrieval
+  async getSelectedMultipleValues(): Promise<string[]> {
+    const valueElements = this.page.locator('[class*="multiValue"] [class*="label"], .css-12jo7m5');
+    const count = await valueElements.count();
+    
+    const values: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const text = await valueElements.nth(i).textContent();
+      if (text) {
+        values.push(text.trim());
       }
     }
+    return values;
   }
-}
 
-// Add this missing method to your SelectMenuPage class
+  async waitForSelectionVisible(dropdownType: 'selectValue' | 'selectOne' | 'oldStyle', expectedValue: string): Promise<void> {
+    const selectors = {
+      selectValue: '#withOptGroup .css-1uccc91-singleValue, #withOptGroup .css-qc6sy-singleValue',
+      selectOne: '#selectOne .css-1uccc91-singleValue, #selectOne .css-qc6sy-singleValue',
+      oldStyle: '#oldSelectMenu'
+    };
 
-/**
- * Select an option from the "Old Style Select Menu" dropdown
- */
-async selectOldStyle(option: string): Promise<void> {
-  console.log(`Selecting old style option: ${option}`);
-  
-  try {
-    // Wait for the old style select element
-    await this.page.waitForSelector(this.oldStyleSelectMenu, { 
-      state: 'visible', 
-      timeout: 15000 
-    });
-    
-    // Scroll into view
-    await this.page.locator(this.oldStyleSelectMenu).scrollIntoViewIfNeeded();
-    
-    // Select the option by value or text
-    await this.page.selectOption(this.oldStyleSelectMenu, { label: option });
-    
-    // Wait for selection to complete
-    await this.page.waitForTimeout(1000);
-    
-    console.log(`Successfully selected old style: ${option}`);
-    
-  } catch (error) {
-    console.log(`Failed to select old style option ${option}:`, error);
-    
-    // Alternative approach - try selecting by value
+    await this.page.waitForFunction(
+      ({ selector, value, type }) => {
+        if (type === 'oldStyle') {
+          const select = document.querySelector(selector) as HTMLSelectElement;
+          return select && select.options[select.selectedIndex]?.text === value;
+        } else {
+          const element = document.querySelector(selector);
+          return element && element.textContent?.trim() === value;
+        }
+      },
+      { selector: selectors[dropdownType], value: expectedValue, type: dropdownType },
+      { timeout: 10000 }
+    );
+  }
+
+  // Fixed: Simplified multiselect wait
+  async waitForMultiselectContains(expectedValues: string[]): Promise<void> {
+    for (const value of expectedValues) {
+      await this.page.waitForSelector(`text=${value}`, { timeout: 10000 });
+    }
+  }
+
+  // Fixed: Simplified readiness check
+  async isDropdownReady(dropdownType: 'selectValue' | 'selectOne' | 'multiselect' | 'oldStyle'): Promise<boolean> {
     try {
-      await this.page.selectOption(this.oldStyleSelectMenu, option);
-      console.log(`Alternative old style selection succeeded for: ${option}`);
-    } catch (altError) {
-      throw new Error(`Could not select old style option: ${option}. Both methods failed.`);
+      switch (dropdownType) {
+        case 'selectValue':
+          await this.selectValueDropdown.waitFor({ state: 'visible', timeout: 5000 });
+          return true;
+          
+        case 'selectOne':
+          await this.selectOneDropdown.waitFor({ state: 'visible', timeout: 5000 });
+          return true;
+          
+        case 'oldStyle':
+          await this.oldStyleSelectMenu.waitFor({ state: 'visible', timeout: 5000 });
+          return true;
+          
+        case 'multiselect':
+          await this.multiselectDropdown.waitFor({ state: 'visible', timeout: 5000 });
+          return true;
+          
+        default:
+          return false;
+      }
+    } catch {
+      return false;
     }
   }
-}
-  
-// SelectMenuPage.ts - FINAL FIXED VERSION for getValue methods
-/**
- * Get the selected value from "Select Value" dropdown
- */
-async getSelectedValue(): Promise<string> {
-  const selector = '#withOptGroup .css-1uccc91-singleValue, #withOptGroup .css-qc6sy-singleValue';
-  await this.page.waitForSelector(selector, { state: 'visible', timeout: 5000 });
-  return (await this.page.textContent(selector)) ?? '';
-}
-
-/**
- * Get the selected value from "Select One" dropdown
- */
-async getSelectedOneValue(): Promise<string> {
-  const selector = '#selectOne .css-1uccc91-singleValue, #selectOne .css-qc6sy-singleValue';
-  await this.page.waitForSelector(selector, { state: 'visible', timeout: 5000 });
-  return (await this.page.textContent(selector)) ?? '';
-}
-
-/**
- * Get the selected value from "Old Style Select Menu"
- */
-async getSelectedOldStyleValue(): Promise<string> {
-  const selectedOption = await this.page.$eval(this.oldStyleSelectMenu, (select: HTMLSelectElement) => {
-    return select.options[select.selectedIndex]?.text || '';
-  });
-  return selectedOption;
-}
-
-/**
- * Get selected values from multiselect dropdown
- */
-async getSelectedMultipleValues(): Promise<string[]> {
-  const values: string[] = [];
-  const valueElements = await this.page.$$('#react-select-4-container .css-12jo7m5');
-  
-  for (const element of valueElements) {
-    const text = await element.textContent();
-    if (text) {
-      values.push(text.trim());
-    }
-  }
-  
-  return values;
-}
 }

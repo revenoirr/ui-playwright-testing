@@ -4,13 +4,16 @@
   "description": "DemoQA Automation Testing Project",
   "main": "index.js",
   "scripts": {
-    "test": "playwright test",
-    "test:chrome": "cucumber-js --config=cucumber.js --profile chrome",
-    "test:firefox": "cucumber-js --config=cucumber.js --profile firefox",
-    "report": "npx playwright show-report",
-    "allure:generate": "allure generate ./allure-results -o ./allure-report --clean",
-    "allure:open": "allure open ./allure-report",
-    "allure:report": "npm run allure:generate && npm run allure:open"
+    "test": "npx playwright test",
+    "test:chrome": "npx playwright test --project=chromium",
+    "test:chrome:headed": "npx playwright test --project=chromium --headed",
+    "test:alerts": "npx playwright test alerts.spec.ts --project=chromium",
+    "test:alerts:headed": "npx playwright test alerts.spec.ts --project=chromium --headed",
+    "test:keyword": "npx playwright test --grep",
+    "test:chrome:1920": "npx playwright test --project=chromium --headed",
+    "test:debug": "npx playwright test --debug",
+    "test:ui": "npx playwright test --ui",
+    "test:report": "npx playwright show-report"
   },
   "keywords": [
     "automation",

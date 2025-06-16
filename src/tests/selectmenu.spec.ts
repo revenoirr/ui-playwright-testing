@@ -1,141 +1,161 @@
-// FIXED selectmenu.spec.ts
 import { test, expect } from '@playwright/test';
 import { SelectMenuPage } from '../page-objects/SelectMenuPage';
-//TODO remove locators to the Page Object
+
 test.describe('Select Menu Tests', () => {
   let selectMenuPage: SelectMenuPage;
 
   test.beforeEach(async ({ page }) => {
-  test.setTimeout(90000); // Increase timeout even more
-  selectMenuPage = new SelectMenuPage(page);
-
-  try {
+    test.setTimeout(60000);
+    selectMenuPage = new SelectMenuPage(page);
+    
     await selectMenuPage.navigate();
-
-    // REMOVE the problematic networkidle wait - it's causing your timeouts
-    // await page.waitForLoadState('networkidle'); // <-- DELETE THIS LINE
-
-    // Instead, wait for page to be loaded and stable
-    await page.waitForLoadState('domcontentloaded');
-
-    // Remove any blocking elements
-    await page.evaluate(() => {
-      const banner = document.querySelector('#fixedban');
-      if (banner) banner.remove();
-
-      const ads = document.querySelectorAll('[id*="google_ads"], [class*="ad"]');
-      ads.forEach(ad => ad.remove());
-
-      // Also remove any overlay or modal elements that might interfere
-      const overlays = document.querySelectorAll('[class*="overlay"], [class*="modal"], [class*="popup"]');
-      overlays.forEach(overlay => overlay.remove());
-    });
-
-    // Give a moment for any dynamic content to settle
-    await page.waitForTimeout(2000);
-
-    console.log('SelectMenu page setup completed successfully');
-
-  } catch (error) {
-    console.log('Setup failed:', error);
-    // Don't throw here - let individual tests handle their own failures
-  }
-});
-
-  async function selectOption(option: string, dropdownName: string) {
-    switch (dropdownName) {
-      case 'Select Value':
-        await selectMenuPage.selectValueOption(option);
-        break;
-      case 'Select One':
-        await selectMenuPage.selectOneOption(option);
-        break;
-      case 'Old Style Select Menu':
-        await selectMenuPage.selectOldStyle(option);
-        break;
-      default:
-        throw new Error(`Unknown dropdown: ${dropdownName}`);
-    }
-  }
-
-  async function selectMultipleOptions(option1: string, option2: string, dropdownName: string) {
-    if (dropdownName === 'Multiselect dropdown') {
-      await selectMenuPage.selectMultipleOptions([option1, option2]);
-    } else {
-      throw new Error(`Multiselect not supported for: ${dropdownName}`);
-    }
-  }
-
-  async function getSelectedValue(dropdownName: string): Promise<string | string[]> {
-    switch (dropdownName) {
-      case 'Select Value':
-        return await selectMenuPage.getSelectedValue();
-      case 'Select One':
-        return await selectMenuPage.getSelectedOneValue();
-      case 'Old Style Select Menu':
-        return await selectMenuPage.getSelectedOldStyleValue();
-      case 'Multiselect dropdown':
-        return await selectMenuPage.getSelectedMultipleValues();
-      default:
-        throw new Error(`Unknown dropdown: ${dropdownName}`);
-    }
-  }
-
-  test('select single options', async () => {
-    await selectOption('Group 1, option 1', 'Select Value');
-    expect(await getSelectedValue('Select Value')).toBe('Group 1, option 1');
-
-    await selectOption('Mrs.', 'Select One');
-    expect(await getSelectedValue('Select One')).toBe('Mrs.');
-
-    await selectOption('Blue', 'Old Style Select Menu');
-    expect(await getSelectedValue('Old Style Select Menu')).toBe('Blue');
+    
+    // Reduced wait time
+    await page.waitForTimeout(1000);
   });
 
-  test('select multiple options in multiselect dropdown', async ({ page }) => {
-    // Add debugging and wait for elements
-    await page.waitForSelector('#selectMenuContainer', { timeout: 15000 });
+  test.describe('Single Selection Dropdowns', () => {
+    
+    test('should select option from Select Value dropdown', async () => {
+      const isReady = await selectMenuPage.isDropdownReady('selectValue');
+      expect(isReady).toBe(true);
+      
+      await selectMenuPage.selectValueOption('Group 1, option 1');
+      
+      await selectMenuPage.waitForSelectionVisible('selectValue', 'Group 1, option 1');
+      const selectedValue = await selectMenuPage.getSelectedValue();
+      expect(selectedValue).toBe('Group 1, option 1');
+    });
 
-    // Scroll to multiselect area
-    await page.locator('#selectMenuContainer').scrollIntoViewIfNeeded();
-    await page.waitForTimeout(1000);
+    test('should select option from Select One dropdown', async () => {
+      const isReady = await selectMenuPage.isDropdownReady('selectOne');
+      expect(isReady).toBe(true);
+      
+      await selectMenuPage.selectOneOption('Mrs.');
+      
+      await selectMenuPage.waitForSelectionVisible('selectOne', 'Mrs.');
+      const selectedValue = await selectMenuPage.getSelectedOneValue();
+      expect(selectedValue).toBe('Mrs.');
+    });
 
-    try {
-      await selectMultipleOptions('Volvo', 'Audi', 'Multiselect dropdown');
+    test('should select option from Old Style Select Menu', async () => {
+      const isReady = await selectMenuPage.isDropdownReady('oldStyle');
+      expect(isReady).toBe(true);
+      
+      await selectMenuPage.selectOldStyle('Blue');
+      
+      await selectMenuPage.waitForSelectionVisible('oldStyle', 'Blue');
+      const selectedValue = await selectMenuPage.getSelectedOldStyleValue();
+      expect(selectedValue).toBe('Blue');
+    });
+  });
 
-      // Add wait for selection to process
-      await page.waitForTimeout(2000);
-
-      const selected = await getSelectedValue('Multiselect dropdown');
-      console.log('Selected values:', selected);
-
-      expect(Array.isArray(selected)).toBe(true);
-
-      // More flexible checking - sometimes the values might be in different format
-      if (Array.isArray(selected) && selected.length > 0) {
-        const selectedString = selected.join(' ').toLowerCase();
-        expect(selectedString).toContain('volvo');
-        expect(selectedString).toContain('audi');
-      } else {
-        // Fallback: check if any options were selected at all using more specific selector
-        const multiselectContainer = page.locator('#selectMenuContainer .css-1hwfws3').first();
-        await expect(multiselectContainer).toBeVisible();
+  test.describe('Multiple Selection Dropdown', () => {
+    
+    const multiSelectTestData = [
+      { 
+        scenario: 'should select two car brands from multiselect dropdown',
+        options: ['Volvo', 'Audi'],
+        description: 'User selects multiple car brands from multiselect dropdown'
+      },
+      {
+        scenario: 'should select three car brands from multiselect dropdown', 
+        options: ['Volvo', 'Saab', 'Audi'],
+        description: 'User selects multiple car brands including Saab'
       }
-    } catch (error) {
-      // Take screenshot for debugging
-      await page.screenshot({ path: `multiselect-debug-${Date.now()}.png` });
-      console.log('Multiselect test error:', error);
+    ];
 
-      // Try alternative verification - check if multiselect dropdown shows any selections
-      const multiselectDropdown = page.locator('#selectMenuContainer').last();
-      const hasSelections = await multiselectDropdown.locator('.css-12jo7m5').count();
+    multiSelectTestData.forEach(({ scenario, options }) => {
+      test(scenario, async () => {
+        const isReady = await selectMenuPage.isDropdownReady('multiselect');
+        expect(isReady).toBe(true);
+        
+        await selectMenuPage.selectMultipleOptions(options);
+        
+        await selectMenuPage.waitForMultiselectContains(options);
+        const selectedValues = await selectMenuPage.getSelectedMultipleValues();
+        
+        expect(selectedValues.length).toBeGreaterThanOrEqual(options.length);
+        
+        options.forEach(option => {
+          const isSelected = selectedValues.some(selected => 
+            selected.toLowerCase().includes(option.toLowerCase())
+          );
+          expect(isSelected).toBe(true);
+        });
+      });
+    });
+  });
 
-      if (hasSelections > 0) {
-        console.log('Alternative verification passed - selections detected');
-        expect(hasSelections).toBeGreaterThan(0);
-      } else {
-        throw error;
+  test.describe('Dropdown Interaction Scenarios', () => {
+    
+    test('should handle all dropdown types in sequence', async () => {
+      expect(await selectMenuPage.isDropdownReady('selectValue')).toBe(true);
+      expect(await selectMenuPage.isDropdownReady('selectOne')).toBe(true);
+      expect(await selectMenuPage.isDropdownReady('oldStyle')).toBe(true);
+      expect(await selectMenuPage.isDropdownReady('multiselect')).toBe(true);
+      
+      await selectMenuPage.selectValueOption('Group 2, option 1');
+      await selectMenuPage.waitForSelectionVisible('selectValue', 'Group 2, option 1');
+      
+      await selectMenuPage.selectOneOption('Dr.');
+      await selectMenuPage.waitForSelectionVisible('selectOne', 'Dr.');
+      
+      await selectMenuPage.selectOldStyle('Red');
+      await selectMenuPage.waitForSelectionVisible('oldStyle', 'Red');
+      
+      await selectMenuPage.selectMultipleOptions(['Volvo', 'Opel']);
+      await selectMenuPage.waitForMultiselectContains(['Volvo', 'Opel']);
+      
+      expect(await selectMenuPage.getSelectedValue()).toBe('Group 2, option 1');
+      expect(await selectMenuPage.getSelectedOneValue()).toBe('Dr.');
+      expect(await selectMenuPage.getSelectedOldStyleValue()).toBe('Red');
+      
+      const multiselectValues = await selectMenuPage.getSelectedMultipleValues();
+      expect(multiselectValues.length).toBeGreaterThanOrEqual(2);
+    });
+
+    test('should verify dropdown states after page reload', async ({ page }) => {
+      await selectMenuPage.selectValueOption('Group 1, option 2');
+      await selectMenuPage.selectOneOption('Mr.');
+      await selectMenuPage.selectOldStyle('Green');
+      
+      await page.reload({ waitUntil: 'load' });
+      
+      await selectMenuPage.navigate();
+      
+      expect(await selectMenuPage.isDropdownReady('selectValue')).toBe(true);
+      expect(await selectMenuPage.isDropdownReady('selectOne')).toBe(true);
+      expect(await selectMenuPage.isDropdownReady('oldStyle')).toBe(true);
+      expect(await selectMenuPage.isDropdownReady('multiselect')).toBe(true);
+    });
+  });
+
+  test.describe('Dropdown Edge Cases', () => {
+    
+    test('should handle empty multiselect gracefully', async () => {
+      const multiselectReady = await selectMenuPage.isDropdownReady('multiselect');
+      expect(multiselectReady).toBe(true);
+      
+      const emptyValues = await selectMenuPage.getSelectedMultipleValues();
+      
+      expect(Array.isArray(emptyValues)).toBe(true);
+      expect(emptyValues.length).toBe(0);
+    });
+
+    test('should verify all dropdown options are accessible', async () => {
+      const dropdownTypes = ['selectValue', 'selectOne', 'oldStyle', 'multiselect'] as const;
+      
+      const readinessResults: boolean[] = [];
+      
+      for (const dropdownType of dropdownTypes) {
+        const isReady = await selectMenuPage.isDropdownReady(dropdownType);
+        readinessResults.push(isReady);
       }
-    }
+      
+      readinessResults.forEach((isReady) => {
+        expect(isReady).toBe(true);
+      });
+    });
   });
 });

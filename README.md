@@ -1,82 +1,79 @@
 # 📘 DemoQA UI Automation with Playwright
 
-Автоматизация UI-тестирования сайта [DemoQA](https://demoqa.com/) с использованием **Playwright** и **Page Object Model**.
+Automated UI testing for the [DemoQA](https://demoqa.com/) website using **Playwright** and the **Page Object Model**.
 
-## 📋 Описание проекта
+## 📋 Project Description
 
-Этот проект включает написание end-to-end UI-тестов для сайта DemoQA, покрывая основные интерактивные компоненты. Используется:
+This project includes end-to-end UI test automation for the DemoQA site, covering key interactive components. It uses:
 
-* **Playwright** для написания и запуска тестов
-* **Page Object Model (POM)** для разделения логики страниц
-* **Allure Report** для генерации отчётов
-* **GitHub Actions** для CI/CD
-* **Cross-browser testing** (Chrome и Firefox)
+* **Playwright** for writing and executing tests
+* **Page Object Model (POM)** for separating page logic
+* **Allure Report** for generating detailed test reports
+* **GitHub Actions** for CI/CD
+* **Cross-browser testing** (Chrome and Firefox)
 
----
+## ✅ Covered Scenarios
 
-## ✅ Покрытые сценарии
-
-| № | Страница                    | Описание                                                                                      |
-| - | --------------------------- | --------------------------------------------------------------------------------------------- |
-| 1 | `/alerts`                   | Обработка всех типов алертов (окна, подтверждения, промпта)                                   |
-| 2 | `/automation-practice-form` | Заполнение обязательных полей формы и проверка результата                                     |
-| 3 | `/text-box`                 | Заполнение текстбоксов случайными данными и проверка результата                               |
-| 4 | `/tool-tips`                | Наведение на элементы и проверка отображения тултипов                                         |
-| 5 | `/select-menu`              | Работа с дропдаунами и мультиселектами (значения: Group 2 Option 1, Other, Green, Black/Blue) |
+| # | Page                        | Description                                                                                      |
+| - | --------------------------- | ------------------------------------------------------------------------------------------------ |
+| 1 | `/alerts`                   | Handling all types of alerts (alert box, confirm, prompt)                                        |
+| 2 | `/automation-practice-form` | Filling required fields in the form and verifying the result                                     |
+| 3 | `/text-box`                 | Filling text boxes with random data and verifying the output                                     |
+| 4 | `/tool-tips`                | Hovering over elements and checking the display of tooltips                                      |
+| 5 | `/select-menu`              | Interacting with dropdowns and multiselects (values: Group 2 Option 1, Other, Green, Black/Blue) |
 
 ---
 
-## 🏗️ Структура проекта
-
+## 🏗️ Project Structure
 ```
 src/
   ├── page-objects/     # Page Object Model
-  ├── support/          # Вспомогательные файлы, хуки
-  └── tests/            # UI-тесты (.spec.ts)
+  ├── support/          # Helpers and hooks
+  └── tests/            # UI tests (.spec.ts)
 ```
 
----
+## 🚀 Installation and Running
 
-## 🚀 Установка и запуск
-
-### 🔧 Установка зависимостей
+### 🔧 Install dependencies
 
 ```bash
 npm install
 npx playwright install --with-deps
 ```
 
-### ▶️ Запуск тестов
+### ▶️ Run tests
 
 ```bash
-npx playwright test           # Запуск всех тестов (Playwright)
-npx playwright test --project=chromium
-npx playwright test --project=firefox
-npx playwright test --project=webkit
+npx playwright test                     # Run all tests
+npx playwright test --project=chromium  # Run in Chromium
+npx playwright test --project=firefox   # Run in Firefox
+npx playwright test --project=webkit    # Run in WebKit
+```
 
-
----
-
-## 📊 Отчёты
+## 📊 Reports
 
 ### Allure Report
 
 ```bash
-npm run allure:report  # Генерация и запуск отчёта
+npm run allure:report  # Generate and open the report
 ```
 
----
 
 ## 🔁 GitHub Actions (CI)
 
-При пуше в `main` ветку автоматически запускаются:
+On each push to the `main` branch, the following steps are automatically executed:
 
-* Установка зависимостей
-* Запуск тестов
-* Генерация Allure отчёта
-* Загрузка отчёта как артефакта
+* Install dependencies
+* Run tests
+* Generate Allure report
+* Upload the report as an artifact
 
-Пайплайн: `.github/workflows/test.yml`
+CI pipeline: `.github/workflows/test.yml`
+
+
+
+
+
 
 
 
@@ -90,6 +87,8 @@ npm run allure:report  # Генерация и запуск отчёта
 *     "playwright": "^1.36.0",
 *     "ts-node": "^10.9.1",
 *     "typescript": "^5.1.6"
+
+done 
 * Is BDD approcah implemented?
 * Remove all locators to the Page Objects.
 * How to launch with specific key word test in Chrome browser with resolution 1920 x 1080?

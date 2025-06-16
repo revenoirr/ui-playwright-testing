@@ -1,160 +1,166 @@
-import { test, expect, Browser, Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { ToolTipsPage } from '../page-objects/ToolTipsPage';
-//TODO remove locators to the Page Object
+
+// FIXED: All locators moved to Page Object, removed hardcoded waits, implemented proper wait strategies
 test.describe('Tooltips tests', () => {
-  let browser: Browser;
-  let page: Page;
   let toolTipsPage: ToolTipsPage;
 
-  test.beforeAll(async ({ browser: testBrowser }) => {
-    browser = testBrowser;
+  test.beforeEach(async ({ page }) => {
+    toolTipsPage = new ToolTipsPage(page);
+    
+    // FIXED: Using domcontentloaded for immediate testing after DOM loads
+    await toolTipsPage.navigate();
+
+    // FIXED: Remove blocking elements using Page Object method
+    await toolTipsPage.removeBlockingElements();
   });
 
-  test.beforeEach(async () => {
-    // Increase timeout for this test suite
-    test.setTimeout(60000);
-
-    try {
-      page = await browser.newPage();
-
-      // Set viewport
-      await page.setViewportSize({ width: 1280, height: 720 });
-
-      toolTipsPage = new ToolTipsPage(page);
-      await toolTipsPage.navigate();
-
-      // Wait for page load with better error handling
-      await page.waitForLoadState('domcontentloaded', { timeout: 30000 });
-
-      // Remove blocking elements
-      await page.evaluate(() => {
-        const banner = document.querySelector('#fixedban');
-        if (banner) banner.remove();
-
-        const ads = document.querySelectorAll('[id*="google_ads"], [class*="ad"]');
-        ads.forEach(ad => ad.remove());
-      });
-
-      // Small delay to ensure page is ready
-      await page.waitForTimeout(1000);
-
-    } catch (error) {
-      console.error('Setup failed:', error);
-      if (page) {
-        await page.close();
-      }
-      throw error;
+  // FIXED: Using data-driven approach with Page Object methods
+  const tooltipTestData = [
+    {
+      name: 'Button',
+      action: 'hoverOverButton',
+      description: 'Hover over button shows tooltip'
+    },
+    {
+      name: 'Text Field',
+      action: 'hoverOverInputField',
+      description: 'Hover over text field shows tooltip'
+    },
+    {
+      name: 'Section Text',
+      action: 'hoverOverSectionText',
+      description: 'Hover over section text shows tooltip'
     }
-  });
+  ];
 
-  test.afterEach(async ({}, testInfo) => {
-    try {
-      if (testInfo.status !== testInfo.expectedStatus && page) {
-        await page.screenshot({
-          path: `screenshots/tooltip-${testInfo.title.replace(/\s+/g, '_')}-${Date.now()}.png`
-        });
-      }
-    } catch (error) {
-      console.log('Could not take screenshot:', error);
-    }
-
-    try {
-      if (page) {
-        await page.close();
-      }
-    } catch (error) {
-      console.log('Could not close page:', error);
-    }
+  tooltipTestData.forEach(({ name, action, description }) => {
+    test(`${description}`, async () => {
+      // FIXED: Using Page Object methods with proper waiting
+      await (toolTipsPage as any)[action]();
+      
+      // FIXED: Using waitForFunction through Page Object method
+      await toolTipsPage.waitForTooltipVisible();
+      
+      // Verify tooltip is visible
+      const isVisible = await toolTipsPage.isTooltipVisible();
+      expect(isVisible).toBe(true);
+      
+      // Verify tooltip has content
+      const tooltipText = await toolTipsPage.getTooltipText();
+      expect(tooltipText).toBeTruthy();
+      expect(tooltipText.length).toBeGreaterThan(0);
+    });
   });
 
   test('Hover over "Contrary" text shows correct tooltip', async () => {
-    try {
-      // Wait for the contrary text element to be available
-      const contrarySelector = 'a[href="javascript:void(0)"]';
-      await page.waitForSelector(contrarySelector, { timeout: 10000 });
+    // FIXED: Using Page Object method with intelligent waiting
+    await toolTipsPage.hoverOverContraryText();
+    
+    // FIXED: Wait for specific tooltip content using Page Object method
+    await toolTipsPage.waitForTooltipContaining('contrary');
+    
+    // Verify tooltip content
+    const tooltipText = await toolTipsPage.getTooltipText();
+    expect(tooltipText.toLowerCase()).toContain('contrary');
+    
+    // FIXED: Using Page Object method for verification
+    const containsExpectedText = await toolTipsPage.verifyTooltipContains('You hovered over the Contrary');
+    expect(containsExpectedText).toBe(true);
+  });
 
-      const contraryElements = await page.locator(contrarySelector).all();
-      let contraryElement = null;
+  test('Verify tooltip appears and disappears correctly', async () => {
+    // Test tooltip appearance
+    await toolTipsPage.hoverOverButton();
+    await toolTipsPage.waitForTooltipVisible();
+    
+    let isVisible = await toolTipsPage.isTooltipVisible();
+    expect(isVisible).toBe(true);
+    
+    // FIXED: Move mouse away using Page Object method
+    await toolTipsPage.moveMouse(0, 0);
+    
+    // FIXED: Wait for tooltip to disappear using Page Object method
+    await toolTipsPage.waitForTooltipToDisappear();
+    
+    isVisible = await toolTipsPage.isTooltipVisible();
+    expect(isVisible).toBe(false);
+  });
 
-      // Find the element that contains "Contrary" text
-      for (const element of contraryElements) {
-        const text = await element.textContent();
-        if (text && text.includes('Contrary')) {
-          contraryElement = element;
-          break;
-        }
-      }
+  test('Multiple tooltip interactions work correctly', async () => {
+    const interactions = [
+      { method: 'hoverOverButton', expectedContent: 'button' },
+      { method: 'hoverOverInputField', expectedContent: 'field' },
+      { method: 'hoverOverContraryText', expectedContent: 'contrary' }
+    ];
 
-      if (!contraryElement) {
-        // Try alternative selector
-        contraryElement = page.locator('text=Contrary').first();
-        await contraryElement.waitFor({ timeout: 5000 });
-      }
-
-      // Scroll element into view
-      await contraryElement.scrollIntoViewIfNeeded();
-
-      // Hover over the element
-      await contraryElement.hover();
-
-      // Wait for tooltip to appear
-      await page.waitForSelector('.tooltip', { timeout: 5000 });
-
-      // Verify tooltip content
-      const tooltipText = await page.locator('.tooltip').textContent();
-      expect(tooltipText).toContain('You hovered over the Contrary'); // Fixed expected text
-
-    } catch (error) {
-      console.error('Tooltip test failed:', error);
-      await page.screenshot({ path: `tooltip-test-debug-${Date.now()}.png` });
-      throw error;
+    for (const interaction of interactions) {
+      // FIXED: Using Page Object methods with proper waiting
+      await (toolTipsPage as any)[interaction.method]();
+      await toolTipsPage.waitForTooltipVisible();
+      
+      const tooltipText = await toolTipsPage.getTooltipText();
+      expect(tooltipText).toBeTruthy();
+      
+      // FIXED: Move mouse away using Page Object method
+      await toolTipsPage.moveMouse(0, 0);
+      
+      // FIXED: Wait for tooltip to disappear using Page Object method
+      await toolTipsPage.waitForTooltipToDisappear();
     }
   });
 
-  // Add more tooltip tests
-  test('Hover over button shows tooltip', async () => {
-    try {
-      const buttonSelector = '#toolTipButton';
-      await page.waitForSelector(buttonSelector, { timeout: 10000 });
+  test('Tooltip content validation for all elements', async () => {
+    const validationData = [
+      {
+        action: 'hoverOverButton',
+        name: 'Button',
+        validation: (text: string) => text.length > 0
+      },
+      {
+        action: 'hoverOverInputField', 
+        name: 'Input Field',
+        validation: (text: string) => text.length > 0
+      },
+      {
+        action: 'hoverOverContraryText',
+        name: 'Contrary Text',
+        validation: (text: string) => text.toLowerCase().includes('contrary')
+      },
+      {
+        action: 'hoverOverSectionText',
+        name: 'Section Text', 
+        validation: (text: string) => text.length > 0
+      }
+    ];
 
-      const button = page.locator(buttonSelector);
-      await button.scrollIntoViewIfNeeded();
-      await button.hover();
-
-      // Wait for tooltip
-      await page.waitForSelector('[role="tooltip"]', { timeout: 5000 });
-
-      const tooltip = page.locator('[role="tooltip"]');
-      const tooltipText = await tooltip.textContent();
+    for (const { action, name, validation } of validationData) {
+      // FIXED: Using Page Object methods with proper waiting
+      await (toolTipsPage as any)[action]();
+      await toolTipsPage.waitForTooltipVisible();
+      
+      const tooltipText = await toolTipsPage.getTooltipText();
+      const isValid = validation(tooltipText);
+      
+      expect(isValid).toBe(true);
       expect(tooltipText).toBeTruthy();
-
-    } catch (error) {
-      console.error('Button tooltip test failed:', error);
-      await page.screenshot({ path: `button-tooltip-debug-${Date.now()}.png` });
-      throw error;
-    }
-  });
-
-  test('Hover over text field shows tooltip', async () => {
-    try {
-      const textFieldSelector = '#toolTipTextField';
-      await page.waitForSelector(textFieldSelector, { timeout: 10000 });
-
-      const textField = page.locator(textFieldSelector);
-      await textField.scrollIntoViewIfNeeded();
-      await textField.hover();
-
-      // Wait for tooltip
-      await page.waitForSelector('[role="tooltip"]', { timeout: 5000 });
-
-      const tooltip = page.locator('[role="tooltip"]');
-      const tooltipText = await tooltip.textContent();
-      expect(tooltipText).toBeTruthy();
-
-    } catch (error) {
-      console.error('Text field tooltip test failed:', error);
-      await page.screenshot({ path: `textfield-tooltip-debug-${Date.now()}.png` });
-      throw error;
+      
+      // FIXED: Reset for next iteration using Page Object method
+      await toolTipsPage.moveMouse(0, 0);
+      await toolTipsPage.waitForTooltipToDisappear();
     }
   });
 });
+
+// EXAMPLE: How to run tooltip tests with specific keywords
+// 
+// Run all tooltip tests:
+// npx playwright test tooltip.spec.ts --project=chromium --headed
+//
+// Run tests with specific keywords:
+// npx playwright test --grep "Contrary" --project=chromium --headed
+// npx playwright test --grep "Button" --project=chromium --headed
+// npx playwright test --grep "Multiple tooltip" --project=chromium --headed
+//
+// Run single test:
+// npx playwright test --grep "Hover over button shows tooltip" --project=chromium --headed
